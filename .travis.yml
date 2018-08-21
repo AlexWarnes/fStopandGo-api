@@ -1,7 +1,10 @@
 language: node_js
 node_js: node
+cache:
+  directories:
+  - node_modules
 services:
-- mongodb
+  - mongodb
 deploy:
   provider: heroku
   api_key:
