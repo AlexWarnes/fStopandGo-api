@@ -1,0 +1,11 @@
+language: node_js
+node_js: node
+services:
+- mongodb
+deploy:
+  provider: heroku
+  api_key:
+    secure: 4dGDckUF7S+3bBu9Bs4c8QqEoDE//1GezBrdppu5Hn1eWSBV17Tk82yahtk4FGzbtnt/DIZzkvAXpc1x+5ZQlFEjBr5f+LyA6+jkMXD0h3zyr54UIe7iR7Jfu0qb/A0KB0Dzik+khLSO3OM18deFEKlgrJkG9HyltzG7Pw3Tqpkhva2xkN7rB6tYnzLzE66syi77iosVmk5AXrLamqDkW6w+7taBTIyh3W2dL2NfY6NF+OgZMx3sEvrnInDUg1OYP5xPw2bHwl4mzQCqX56jFCBpC2x0iws50z9kBK3sZTuqxKzv3qc38SjMjOb9sHSylzxLWM+Lem3JPtexoAsD+n9GRHQ5ynnkJQQ3Lc13adnTjUuUy7VULiFsRsCMysbwbnwZ4EMRPS5/dFPozaonlQOQAqDJ71tFBC36pzxxNLlSoNeWnacHyKVn+tMFIWbU01Z9V2Tte/kgiX7oT6jYE0Nz6WGij1KSwUx2GI7JXzILGibM4nba5Yw57pSSisYO4vWNhicsAcMHLnFYBPgzUseCJqTw4z1ACeR5AHJOmzmxSN6KX9rVWmxH3yilNhyZi6xIfSkTBhEEiy3VyYTzFufHbkLEsVHHL5tasekZ2Cw+PqnFWsIusND+UbvKSpPeO+45x9HbCf21dd+EJtJp1IPYOxxUgCqeDYPe6kWYkZk=
+  app: fstopandgo-api
+  on:
+    repo: AlexWarnes/fStopandGo-api
