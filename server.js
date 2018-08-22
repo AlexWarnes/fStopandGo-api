@@ -1,11 +1,12 @@
 const express = require('express');
 const morgan = require('morgan');
 const chalk = require('chalk');
-
-const PORT = process.env.PORT || 8080;
+const cors = require('cors');
+const { PORT, CLIENT_ORIGIN } = require('./config');
 
 const app = express();
 app.use(morgan('common'));
+app.use(cors({origin: CLIENT_ORIGIN}));
 
 app.get('/api/*', (req, res, next) => {
     res.json({Message: "GET request to /"});
