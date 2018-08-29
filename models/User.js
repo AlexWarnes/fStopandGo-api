@@ -1,30 +1,30 @@
 const mongoose = require('mongoose');
 	mongoose.Promise = global.Promise;
-// const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 
 const userSchema = mongoose.Schema({
 	username: { type: String, required: true, unique: true },
 	password: { type: String, required: true },
-	email: { type: String, required: false},
-	created: { type: Date, default: Date.now }
-});
+	email: { type: String, required: false}
+	}, 
+	{timestamps: true}
+);
 
 userSchema.methods.serialize = function() {
 	return {
 		id: this._id,
 		username: this.username,
-		email: this.email,
-		created: this.dateCreated
+		email: this.email
 	};
 };
 
-// userSchema.methods.validatePassword = function(password) {
-// 	return bcrypt.compare(password, this.password);
-// };
+userSchema.methods.validatePassword = function(password) {
+	return bcrypt.compare(password, this.password);
+};
 
-// userSchema.methods.hashPassword = function(password) {
-// 	return bcrypt.hash(password, 10);
-// };
+userSchema.statics.hashPassword = function(password) {
+	return bcrypt.hash(password, 10);
+};
 
 const User = mongoose.model('User', userSchema);
 

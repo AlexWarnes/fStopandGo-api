@@ -7,7 +7,9 @@ const shootSchema = mongoose.Schema({
     location: { type: String, required: false },
     description: { type: String, required: false },
     gearList: {type: Array, required: false }
-});
+    }, 
+    {timestamps: true}
+);
 
 shootSchema.methods.serialize = function() {
     return {
