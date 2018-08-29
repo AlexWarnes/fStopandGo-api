@@ -255,7 +255,7 @@ router.delete('/users/:id', (req, res, next) => {
     //     .json({error: message});
     // };
 
-    User.findByIdAndRemove(req.params.id)
+    User.findByIdAndDelete(req.params.id)
         .then(res.status(200).end())
         .catch(err => {
             console.error(err);
@@ -265,14 +265,14 @@ router.delete('/users/:id', (req, res, next) => {
 
 router.delete('/shoots/:id', (req, res, next) => {
     // TODO: Once passport is used, access req.user.id to ensure user is owner of the shoot for validation
-    // Shoot.findById(req.params.id, 'owner').then(shoot => {
+    // Shoot.findById(req.params.id).select('owner').then(shoot => {
     //     if (shoot.owner !== req.user.id) {
     //     const message = chalk.red(`You cannot delete someone else's shoot.`);
     //     console.error(message);
     //     return res.status(403)
     //     .json({error: message});   
 
-    Shoot.findByIdAndRemove(req.params.id)
+    Shoot.findByIdAndDelete(req.params.id)
         .then(res.status(200).end())
         .catch(err => {
             console.error(err);
