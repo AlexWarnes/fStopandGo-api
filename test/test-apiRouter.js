@@ -76,7 +76,7 @@ describe('CRUD Testing for Users', function() {
 	});
 
 	afterEach(function(){
-		return User.remove({})
+		return User.deleteMany({})
 		.then(tearDownDatabase());
 	});
 
@@ -95,7 +95,7 @@ describe('CRUD Testing for Users', function() {
 				expect(res).to.have.status(200);
 				expect(res).to.be.json;
 				expect(res.noContent).to.be.false;
-				return User.count();
+				return User.countDocuments();
 			})
 			.then(function(count){
 				expect(res.body).to.have.lengthOf(count);
