@@ -122,7 +122,7 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 
 	describe(chalk.green('POST Request to /api/users'), function() {
 		it('Should create a new user', function(){
-			let newUser = generateUser();
+			const newUser = generateUser();
 			return chai.request(app)
 			.post('/api/users')
 			.send(newUser)
@@ -153,7 +153,6 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 				username: 'putRequest',
 				email: 'put@request.com'
 			}
-
 			return User.findOne({}).then(function(user){
 				updatePayload.id = user.id;
 				return chai.request(app)
@@ -166,6 +165,22 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 				expect(user.username).to.equal(updatePayload.username);
 				expect(user.email).to.equal(updatePayload.email);
 				expect(user).to.be.an('object');
+			});
+		});
+	});
+
+	describe(chalk.green('DELETE Request to /api/users/:id'), function(){
+		it('Should delete the specified user', function(){
+			let userToDelete;
+			return User.findOne({}).then(function(user){
+				userToDelete = user;
+				return chai.request(app)
+				.delete(`/api/users/${userToDelete.id}`);
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				return User.findById(userToDelete.id);
+			}).then(function(user){
+				expect(user).to.be.null;
 			});
 		});
 	});
