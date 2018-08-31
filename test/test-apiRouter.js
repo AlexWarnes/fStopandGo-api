@@ -146,4 +146,27 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 			});
 		});
 	});
+
+	describe(chalk.green('PUT Request to /api/users/:id'), function(){
+		it('Should update the specified fields for the specified user', function(){
+			const updatePayload = {
+				username: 'putRequest',
+				email: 'put@request.com'
+			}
+
+			return User.findOne({}).then(function(user){
+				updatePayload.id = user.id;
+				return chai.request(app)
+				.put(`/api/users/${updatePayload.id}`)
+				.send(updatePayload)
+			}).then(function(res){
+				expect(res).to.have.status(204);
+				return User.findById(updatePayload.id);
+			}).then(function(user){
+				expect(user.username).to.equal(updatePayload.username);
+				expect(user.email).to.equal(updatePayload.email);
+				expect(user).to.be.an('object');
+			});
+		});
+	});
 });
