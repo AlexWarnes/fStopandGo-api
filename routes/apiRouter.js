@@ -208,7 +208,7 @@ router.put('/users/:id', jsonParser, (req, res, next) => {
         }
     });
 
-    User.findByIdAndUpdate(req.body.id, {$set: updatePayload}, {new: true}, function(err, user){console.log(chalk.cyan(user))})
+    User.findByIdAndUpdate(req.body.id, {$set: updatePayload})
     .then(user => {
         //TODO: Figure out callback to return the updated user
         res.status(204).end();
@@ -235,7 +235,7 @@ router.put('/shoots/:id', jsonParser, (req, res, next) => {
         }
     });
 
-    Shoot.findByIdAndUpdate(req.body.id, {$set: updatePayload}, {new: true}, function(err, shoot){console.log(chalk.cyan(shoot))}).then(shoot => {
+    Shoot.findByIdAndUpdate(req.body.id, {$set: updatePayload}).then(shoot => {
         //TODO: Figure out callback to return the updated user
         res.status(204).end();
     }).catch(err => {
