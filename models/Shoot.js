@@ -18,7 +18,8 @@ shootSchema.methods.serialize = function() {
         owner: this.owner,
         location: this.location,
         description: this.description,
-        gearList: this.gearList
+        gearList: this.gearList,
+        createdAt: this.createdAt
     };
 };
 
