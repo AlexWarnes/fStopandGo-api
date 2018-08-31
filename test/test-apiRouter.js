@@ -23,7 +23,7 @@ function generateUser() {
 }
 
 function seedUserData() {
-	console.info(chalk.cyan('Seeding User Data...'));
+	console.info(chalk.dim('Seeding User Data...'));
 	let seedData = [];
 	for(let i = 0; i <= 10; i++){
 		seedData.push(generateUser());
@@ -39,7 +39,7 @@ function generateGearList() {
 	return fakeGear;
 };
 
-function generateShoots() {
+function generateShoot() {
 	return {
 		title: faker.hacker.phrase(),
 		location: faker.address.city(),
@@ -49,10 +49,10 @@ function generateShoots() {
 }
 
 function seedShootData() {
-	console.info(chalk.cyan('Seeding Shoot Data...'));
+	console.info(chalk.dim('Seeding Shoot Data...'));
 	let seedData = [];
 	for(i = 0; i <= 10; i++){
-		seedData.push(generateShoots);
+		seedData.push(generateShoot);
 	}
 	return Shoot.insertMany(seedData);
 };
@@ -61,12 +61,12 @@ function seedShootData() {
 // function getToken(username){}
 
 function tearDownDatabase(){
-	console.warn(chalk.red('Tearing down test database.'));
+	console.warn(chalk.dim('Tearing down test db...'));
 	mongoose.connection.dropDatabase();
 }
 
 // CRUD Testing for Users
-describe('CRUD Testing for Users', function() {
+describe(chalk.bold.green('CRUD Testing for Users'), function() {
 	before(function(){
 		return runServer(TESTING_DATABASE_URL);
 	});
@@ -84,10 +84,9 @@ describe('CRUD Testing for Users', function() {
 		return closeServer();
 	});
 
-	describe('GET Request to /api/users', function(){
+	describe(chalk.green('GET Request to /api/users'), function(){
 		it('Should return all the users', function(){
 			let res;
-
 			return chai.request(app)
 			.get('/api/users')
 			.then(function(_res){
@@ -101,22 +100,50 @@ describe('CRUD Testing for Users', function() {
 				expect(res.body).to.have.lengthOf(count);
 			});
 		});
+	});
 
+	describe(chalk.green('GET Request to /api/users/:id'), function() {
 		it('Should return the specified user', function(){
 			let randomUser;
-
 			return User.findOne({})
-				.then(function(_user){
-					randomUser = _user;
-					return chai.request(app)
-					.get(`/api/users/${randomUser.id}`)
-				}).then(function(res){
-					expect(res).to.have.status(200);
-					expect(res).to.be.json;
-					expect(res.body.id).to.equal(randomUser.id);
-					expect(res.body.username).to.equal(randomUser.username);
-					expect(res.body.email).to.equal(randomUser.email);
-				});
+			.then(function(_user){
+				randomUser = _user;
+				return chai.request(app)
+				.get(`/api/users/${randomUser.id}`)
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(res.body.id).to.equal(randomUser.id);
+				expect(res.body.username).to.equal(randomUser.username);
+				expect(res.body.email).to.equal(randomUser.email);
+			});
+		});
+	});
+
+	describe(chalk.green('POST Request to /api/users'), function() {
+		it('Should create a new user', function(){
+			let newUser = generateUser();
+			return chai.request(app)
+			.post('/api/users')
+			.send(newUser)
+			.then(function(res){
+				newUser.id = res.body.id;
+				expect(res).to.have.status(201);
+				expect(res).to.be.json;
+				expect(res.body).to.have.keys('id', 'username', 'email', 'createdAt');
+				expect(res.body).to.not.have.any.keys('password');
+				expect(res.body.id).not.to.be.null;
+				expect(res.body.username).to.equal(newUser.username);
+				expect(res.body.email).to.equal(newUser.email);
+				expect(res.body.createdAt).not.to.be.null;
+				return User.findById(newUser.id);
+			})
+			.then(function(user){
+				expect(user.id).to.equal(newUser.id);
+				expect(user.username).to.equal(newUser.username);
+				expect(user.email).to.equal(newUser.email);
+				expect(user.createdAt).not.to.be.null;
+			});
 		});
 	});
 });
