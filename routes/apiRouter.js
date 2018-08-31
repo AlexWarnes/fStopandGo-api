@@ -145,8 +145,6 @@ router.post('/users', jsonParser, (req, res, next) => {
 		'max' in sizedFields[field] && req.body[field].trim().length > sizedFields[field].max
     });
 
-    console.log(chalk.red('TOO SMALL FIELD: ' + tooSmallField))
-
     if (tooSmallField || tooLargeField) {
         return res.status(422).json({
             code: 422,
