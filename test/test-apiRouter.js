@@ -44,15 +44,16 @@ function generateShoot() {
 		title: faker.hacker.phrase(),
 		location: faker.address.city(),
 		description: faker.lorem.paragraph(),
+		owner: 'testOwner',
 		gearList: generateGearList()
-	}
+	};
 }
 
 function seedShootData() {
 	console.info(chalk.dim('Seeding Shoot Data...'));
 	let seedData = [];
 	for(i = 0; i <= 10; i++){
-		seedData.push(generateShoot);
+		seedData.push(generateShoot());
 	}
 	return Shoot.insertMany(seedData);
 };
@@ -84,7 +85,7 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 		return closeServer();
 	});
 
-	describe(chalk.green('GET Request to /api/users'), function(){
+	describe(chalk.green('GET Users from /api/users'), function(){
 		it('Should return all the users', function(){
 			let res;
 			return chai.request(app)
@@ -102,7 +103,7 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 		});
 	});
 
-	describe(chalk.green('GET Request to /api/users/:id'), function() {
+	describe(chalk.green('GET Specific User from /api/users/:id'), function() {
 		it('Should return the specified user', function(){
 			let randomUser;
 			return User.findOne({})
@@ -181,6 +182,42 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 				return User.findById(userToDelete.id);
 			}).then(function(user){
 				expect(user).to.be.null;
+			});
+		});
+	});
+});
+
+describe(chalk.bold.green('CRUD Testing for Shoots'), function(){
+	before(function(){
+		return runServer(TESTING_DATABASE_URL);
+	});
+
+	beforeEach(function(){
+		return seedShootData();
+	});
+
+	afterEach(function(){
+		return Shoot.deleteMany({})
+		.then(tearDownDatabase());
+	});
+
+	after(function(){
+		return closeServer();
+	});
+
+	describe(chalk.green('GET All Shoots from /api/shoots'), function(){
+		it('Should return all the shoots', function(){
+			let res;
+			return chai.request(app)
+			.get('/api/shoots')
+			.then(function(_res){
+				res = _res;
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(res.noContent).to.be.false;
+				return Shoot.countDocuments();
+			}).then(function(count){
+				expect(res.body).to.have.lengthOf(count);
 			});
 		});
 	});
