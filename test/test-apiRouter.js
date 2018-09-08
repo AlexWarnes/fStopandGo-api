@@ -290,4 +290,29 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 			});
 		});
 	});
+
+	describe(chalk.green('PUT request to /api/shoots/:id'), function(){
+		it('Should update specified fields for specified shoot', function(){
+			const updatePayload = {
+				title: 'Sunset Photos',
+				location: 'Hurricane Ridge Visitors Center'
+			};
+
+			return Shoot.findOne({}).then(function(shoot){
+				updatePayload.id = shoot.id;
+				return chai.request(app)
+				.put(`/api/shoots/${updatePayload.id}`)
+				.send(updatePayload)
+				.then(function(res){
+					expect(res).to.have.status(204);
+					return Shoot.findById(updatePayload.id).then(function(shoot){
+						expect(shoot.title).to.equal(updatePayload.title);
+						expect(shoot.location).to.equal(updatePayload.location);
+						expect(shoot).to.be.an('object');
+						expect(shoot.description).not.to.be.null;
+					});
+				});
+			});
+		});
+	});
 });
