@@ -44,6 +44,7 @@ router.get('/fakeshoots', (req, res, next) => {
                 title: faker.hacker.phrase(),
                 location: faker.address.city(),
                 description: faker.lorem.paragraph(),
+                owner: `user${i}`,
                 gearList: fakeGearList()
             });
         }
@@ -75,13 +76,26 @@ router.get('/users/:id', (req, res, next) => {
 });
 
 router.get('/shoots', (req, res, next) => {
-    Shoot.find().then(data => {
-        res.status(200)
-        .json(data.map(shoot => shoot.serialize()));
-    }).catch(err => {
-        console.error(err);
-        res.status(500).json({message: 'Internal server error'});
-    });
+    // TODO: use this once passport is incorporated:
+    // if (req.query.owner && req.query.owner === req.user.id) {
+    if (req.query.owner) {
+        console.log(chalk.cyan(`QUERY: ${req.query.owner}`));
+        Shoot.find({owner: req.query.owner}).then(data => {
+            res.status(200)
+            .json(data.map(shoot => shoot.serialize()));
+        }).catch(err => {
+            console.error(err);
+            res.status(500).json({message: 'Internal server error'});
+        });
+    } else {
+        Shoot.find().then(data => {
+            res.status(200)
+            .json(data.map(shoot => shoot.serialize()));
+        }).catch(err => {
+            console.error(err);
+            res.status(500).json({message: 'Internal server error'});
+        });
+    };
 });
 
 router.get('/shoots/:id', (req, res, next) => {
@@ -178,7 +192,8 @@ router.post('/users', jsonParser, (req, res, next) => {
 router.post('/shoots', jsonParser, (req, res, next) => {
     Shoot.create({
         title: req.body.title,
-        owner: 'To-Do Passport: req.user.id',
+        // TODO: with passport use "owner: req.user.id"
+        owner: faker.name.firstName(),
         location: req.body.location,
         description: req.body.description,
         gearList: req.body.gearList

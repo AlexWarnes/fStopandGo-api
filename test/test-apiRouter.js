@@ -39,20 +39,21 @@ function generateGearList() {
 	return fakeGear;
 };
 
-function generateShoot() {
+function generateShoot(username) {
 	return {
 		title: faker.hacker.phrase(),
 		location: faker.address.city(),
 		description: faker.lorem.paragraph(),
+		owner: username,
 		gearList: generateGearList()
-	}
+	};
 }
 
 function seedShootData() {
 	console.info(chalk.dim('Seeding Shoot Data...'));
 	let seedData = [];
 	for(i = 0; i <= 10; i++){
-		seedData.push(generateShoot);
+		seedData.push(generateShoot(`user${i}`));
 	}
 	return Shoot.insertMany(seedData);
 };
@@ -66,7 +67,7 @@ function tearDownDatabase(){
 }
 
 // CRUD Testing for Users
-describe(chalk.bold.green('CRUD Testing for Users'), function() {
+describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 	before(function(){
 		return runServer(TESTING_DATABASE_URL);
 	});
@@ -84,7 +85,7 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 		return closeServer();
 	});
 
-	describe(chalk.green('GET Request to /api/users'), function(){
+	describe(chalk.green('GET Users from /api/users'), function(){
 		it('Should return all the users', function(){
 			let res;
 			return chai.request(app)
@@ -102,7 +103,7 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 		});
 	});
 
-	describe(chalk.green('GET Request to /api/users/:id'), function() {
+	describe(chalk.green('GET Specific User from /api/users/:id'), function() {
 		it('Should return the specified user', function(){
 			let randomUser;
 			return User.findOne({})
@@ -132,13 +133,11 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 				expect(res).to.be.json;
 				expect(res.body).to.have.keys('id', 'username', 'email', 'createdAt');
 				expect(res.body).to.not.have.any.keys('password');
-				expect(res.body.id).not.to.be.null;
 				expect(res.body.username).to.equal(newUser.username);
 				expect(res.body.email).to.equal(newUser.email);
 				expect(res.body.createdAt).not.to.be.null;
 				return User.findById(newUser.id);
-			})
-			.then(function(user){
+			}).then(function(user){
 				expect(user.id).to.equal(newUser.id);
 				expect(user.username).to.equal(newUser.username);
 				expect(user.email).to.equal(newUser.email);
@@ -181,6 +180,149 @@ describe(chalk.bold.green('CRUD Testing for Users'), function() {
 				return User.findById(userToDelete.id);
 			}).then(function(user){
 				expect(user).to.be.null;
+			});
+		});
+	});
+});
+
+describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
+	before(function(){
+		return runServer(TESTING_DATABASE_URL);
+	});
+
+	beforeEach(function(){
+		return seedShootData();
+	});
+
+	afterEach(function(){
+		return Shoot.deleteMany({})
+		.then(tearDownDatabase());
+	});
+
+	after(function(){
+		return closeServer();
+	});
+
+	describe(chalk.green('GET All Shoots from /api/shoots'), function(){
+		it('Should return all the shoots', function(){
+			let res;
+			return chai.request(app)
+			.get('/api/shoots')
+			.then(function(_res){
+				res = _res;
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(res.noContent).to.be.false;
+				return Shoot.countDocuments();
+			}).then(function(count){
+				expect(res.body).to.have.lengthOf(count);
+			});
+		});
+	});
+
+	describe(chalk.green('GET specific shoot from /api/shoots/:id'), function(){
+		it('Should return the specified shoot', function(){
+			let randomShoot;
+
+			return Shoot.findOne({}).then(function(shoot){
+				randomShoot = shoot;
+				return chai.request(app)
+				.get(`/api/shoots/${randomShoot.id}`)
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(res.body.title).to.equal(randomShoot.title);
+				expect(res.body.description).to.equal(randomShoot.description);
+				expect(res.body.location).to.equal(randomShoot.location);
+				expect(res.body.gearList[0]).to.equal(randomShoot.gearList[0]);
+			});
+		});
+	});
+
+	describe(chalk.green('GET All Shoots from Specific Owner from /api/shoots?owner=:userId'), function(){
+		it('Should return all shoots from the specified owner', function(){
+			let shootsByUser2;
+			
+			return Shoot.find({owner: 'user2'}).then(function(shoot){
+				shootsByUser2 = shoot;
+				return chai.request(app)
+				.get('/api/shoots?owner=user2')
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(JSON.parse(res.text)).to.have.length(1);
+				expect(res.body.id).to.equal(shootsByUser2.id);
+				expect(res.body.title).to.equal(shootsByUser2.title);
+				expect(res.body.location).to.equal(shootsByUser2.location);
+				expect(res.body.description).to.equal(shootsByUser2.description);
+			});
+		});
+	});
+
+	describe(chalk.green('POST to /api/shoots'), function(){
+		it('Should create a new shoot', function(){
+			const newShoot = generateShoot('testUser');
+
+			return chai.request(app)
+			.post('/api/shoots')
+			.send(newShoot)
+			.then(function(res){
+				newShoot.id = res.body.id;
+				newShoot.owner = res.body.owner;
+				expect(res).to.have.status(201);
+				expect(res).to.be.json;
+				expect(res.body).to.have.keys('id','owner','title','location','description','gearList','createdAt');
+				expect(res.body.title).to.equal(newShoot.title);
+				expect(res.body.location).to.equal(newShoot.location);
+				expect(res.body.description).to.equal(newShoot.description);
+				return Shoot.findById(newShoot.id)
+			}).then(function(shoot){
+				expect(shoot.id).to.equal(newShoot.id);
+				expect(shoot.owner).to.equal(newShoot.owner);
+				expect(shoot.title).to.equal(newShoot.title);
+				expect(shoot.location).to.equal(newShoot.location);
+				expect(shoot.description).to.equal(newShoot.description);
+				expect(shoot.createdAt).not.to.be.null;
+			});
+		});
+	});
+
+	describe(chalk.green('PUT request to /api/shoots/:id'), function(){
+		it('Should update specified fields for specified shoot', function(){
+			const updatePayload = {
+				title: 'Sunset Photos',
+				location: 'Hurricane Ridge Visitors Center'
+			};
+
+			return Shoot.findOne({}).then(function(shoot){
+				updatePayload.id = shoot.id;
+				return chai.request(app)
+				.put(`/api/shoots/${updatePayload.id}`)
+				.send(updatePayload)
+			}).then(function(res){
+				expect(res).to.have.status(204);
+				return Shoot.findById(updatePayload.id)
+			}).then(function(shoot){
+				expect(shoot.title).to.equal(updatePayload.title);
+				expect(shoot.location).to.equal(updatePayload.location);
+				expect(shoot).to.be.an('object');
+				expect(shoot.description).not.to.be.null;
+			});
+		});
+	});
+
+	describe(chalk.green('DELETE request to /api/shoots/:id'), function(){
+		it('Should delete the specified shoot', function(){
+			let shootToDelete;
+			return Shoot.findOne({}).then(function(shoot){
+				shootToDelete = shoot;
+				return chai.request(app)
+				.delete(`/api/shoots/${shootToDelete.id}`)
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				return Shoot.findById(shootToDelete.id)
+			}).then(function(shoot){
+				expect(shoot).to.be.null;
 			});
 		});
 	});
