@@ -137,8 +137,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 				expect(res.body.email).to.equal(newUser.email);
 				expect(res.body.createdAt).not.to.be.null;
 				return User.findById(newUser.id);
-			})
-			.then(function(user){
+			}).then(function(user){
 				expect(user.id).to.equal(newUser.id);
 				expect(user.username).to.equal(newUser.username);
 				expect(user.email).to.equal(newUser.email);
@@ -225,19 +224,17 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 		it('Should return the specified shoot', function(){
 			let randomShoot;
 
-			return Shoot.findOne({})
-			.then(function(shoot){
+			return Shoot.findOne({}).then(function(shoot){
 				randomShoot = shoot;
 				return chai.request(app)
 				.get(`/api/shoots/${randomShoot.id}`)
-				.then(function(res){
-					expect(res).to.have.status(200);
-					expect(res).to.be.json;
-					expect(res.body.title).to.equal(randomShoot.title);
-					expect(res.body.description).to.equal(randomShoot.description);
-					expect(res.body.location).to.equal(randomShoot.location);
-					expect(res.body.gearList[0]).to.equal(randomShoot.gearList[0]);
-				});
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(res.body.title).to.equal(randomShoot.title);
+				expect(res.body.description).to.equal(randomShoot.description);
+				expect(res.body.location).to.equal(randomShoot.location);
+				expect(res.body.gearList[0]).to.equal(randomShoot.gearList[0]);
 			});
 		});
 	});
@@ -246,19 +243,18 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 		it('Should return all shoots from the specified owner', function(){
 			let shootsByUser2;
 			
-			return Shoot.find({owner: 'user2'}).then(function(data){
-				shootsByUser2 = data;
+			return Shoot.find({owner: 'user2'}).then(function(shoot){
+				shootsByUser2 = shoot;
 				return chai.request(app)
 				.get('/api/shoots?owner=user2')
-				.then(function(res){
-					expect(res).to.have.status(200);
-					expect(res).to.be.json;
-					expect(JSON.parse(res.text)).to.have.length(1);
-					expect(res.body.id).to.equal(shootsByUser2.id);
-					expect(res.body.title).to.equal(shootsByUser2.title);
-					expect(res.body.location).to.equal(shootsByUser2.location);
-					expect(res.body.description).to.equal(shootsByUser2.description);
-				});
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				expect(res).to.be.json;
+				expect(JSON.parse(res.text)).to.have.length(1);
+				expect(res.body.id).to.equal(shootsByUser2.id);
+				expect(res.body.title).to.equal(shootsByUser2.title);
+				expect(res.body.location).to.equal(shootsByUser2.location);
+				expect(res.body.description).to.equal(shootsByUser2.description);
 			});
 		});
 	});
@@ -279,14 +275,14 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 				expect(res.body.title).to.equal(newShoot.title);
 				expect(res.body.location).to.equal(newShoot.location);
 				expect(res.body.description).to.equal(newShoot.description);
-				return Shoot.findById(newShoot.id).then(function(shoot){
-					expect(shoot.id).to.equal(newShoot.id);
-					expect(shoot.owner).to.equal(newShoot.owner);
-					expect(shoot.title).to.equal(newShoot.title);
-					expect(shoot.location).to.equal(newShoot.location);
-					expect(shoot.description).to.equal(newShoot.description);
-					expect(shoot.createdAt).not.to.be.null;
-				});
+				return Shoot.findById(newShoot.id)
+			}).then(function(shoot){
+				expect(shoot.id).to.equal(newShoot.id);
+				expect(shoot.owner).to.equal(newShoot.owner);
+				expect(shoot.title).to.equal(newShoot.title);
+				expect(shoot.location).to.equal(newShoot.location);
+				expect(shoot.description).to.equal(newShoot.description);
+				expect(shoot.createdAt).not.to.be.null;
 			});
 		});
 	});
@@ -303,15 +299,30 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 				return chai.request(app)
 				.put(`/api/shoots/${updatePayload.id}`)
 				.send(updatePayload)
-				.then(function(res){
-					expect(res).to.have.status(204);
-					return Shoot.findById(updatePayload.id).then(function(shoot){
-						expect(shoot.title).to.equal(updatePayload.title);
-						expect(shoot.location).to.equal(updatePayload.location);
-						expect(shoot).to.be.an('object');
-						expect(shoot.description).not.to.be.null;
-					});
-				});
+			}).then(function(res){
+				expect(res).to.have.status(204);
+				return Shoot.findById(updatePayload.id)
+			}).then(function(shoot){
+				expect(shoot.title).to.equal(updatePayload.title);
+				expect(shoot.location).to.equal(updatePayload.location);
+				expect(shoot).to.be.an('object');
+				expect(shoot.description).not.to.be.null;
+			});
+		});
+	});
+
+	describe(chalk.green('DELETE request to /api/shoots/:id'), function(){
+		it('Should delete the specified shoot', function(){
+			let shootToDelete;
+			return Shoot.findOne({}).then(function(shoot){
+				shootToDelete = shoot;
+				return chai.request(app)
+				.delete(`/api/shoots/${shootToDelete.id}`)
+			}).then(function(res){
+				expect(res).to.have.status(200);
+				return Shoot.findById(shootToDelete.id)
+			}).then(function(shoot){
+				expect(shoot).to.be.null;
 			});
 		});
 	});
