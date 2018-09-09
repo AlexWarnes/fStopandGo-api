@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
     mongoose.Promise = global.Promise;
+const passport = require('passport');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const faker = require('faker');
@@ -8,8 +9,13 @@ const chalk = require('chalk');
 
 const { User } = require('../models/User');
 const { Shoot } = require('../models/Shoot');
+const { localStrategy, jwtStrategy } = require('../auth/strategies')
 
 const router = express.Router();
+passport.use(localStrategy);
+passport.use(jwtStrategy);
+
+const jwtAuth = passport.authenticate('jwt', { session: false });
 
 //Temporary routes to get fake user & shoot JSON
 router.get('/fakeusers', (req, res, next) => {
@@ -55,7 +61,7 @@ router.get('/fakeshoots', (req, res, next) => {
 
 //All routes go through /api
 
-router.get('/users', (req, res, next) => {
+router.get('/users', jwtAuth, (req, res, next) => {
     User.find().then(data => {
         res.status(200)
         .json(data.map(user => user.serialize()));
@@ -65,7 +71,8 @@ router.get('/users', (req, res, next) => {
     }); 
 });
 
-router.get('/users/:id', (req, res, next) => {
+router.get('/users/:id', jwtAuth, (req, res, next) => {
+    // TODO: restrict by requring req.user.id === req.params.id
     User.findById(req.params.id).then(user => {
         res.status(200)
         .json(user.serialize());
@@ -75,7 +82,7 @@ router.get('/users/:id', (req, res, next) => {
     });
 });
 
-router.get('/shoots', (req, res, next) => {
+router.get('/shoots', jwtAuth, (req, res, next) => {
     // TODO: use this once passport is incorporated:
     // if (req.query.owner && req.query.owner === req.user.id) {
     if (req.query.owner) {
@@ -98,7 +105,7 @@ router.get('/shoots', (req, res, next) => {
     };
 });
 
-router.get('/shoots/:id', (req, res, next) => {
+router.get('/shoots/:id', jwtAuth, (req, res, next) => {
     Shoot.findById(req.params.id).then(shoot => {
         res.status(200)
         .json(shoot.serialize());
@@ -189,7 +196,7 @@ router.post('/users', jsonParser, (req, res, next) => {
     
 });
 
-router.post('/shoots', jsonParser, (req, res, next) => {
+router.post('/shoots', jwtAuth, jsonParser, (req, res, next) => {
     Shoot.create({
         title: req.body.title,
         // TODO: with passport use "owner: req.user.id"
@@ -206,7 +213,8 @@ router.post('/shoots', jsonParser, (req, res, next) => {
     });
 });
 
-router.put('/users/:id', jsonParser, (req, res, next) => {
+router.put('/users/:id', jwtAuth, jsonParser, (req, res, next) => {
+    // TODO: restrict by requring req.user.id === req.params.id
     if (req.params.id !== req.body.id) {
         const message = chalk.red(`Request path id (${req.params.id}) and request body id (${req.body.id}) must match.`);
         console.error(message);
@@ -233,7 +241,8 @@ router.put('/users/:id', jsonParser, (req, res, next) => {
     });
 });
 
-router.put('/shoots/:id', jsonParser, (req, res, next) => {
+router.put('/shoots/:id', jwtAuth, jsonParser, (req, res, next) => {
+    // TODO: restrict by requring req.user.id === req.params.id
     //TODO this exact same validation is repeated four times, so make it into a validation function
     if (req.params.id !== req.body.id) {
         const message = chalk.red(`Request path id (${req.params.id}) and request body id (${req.body.id}) must match.`);
@@ -259,7 +268,7 @@ router.put('/shoots/:id', jsonParser, (req, res, next) => {
     });
 });
 
-router.delete('/users/:id', (req, res, next) => {
+router.delete('/users/:id', jwtAuth, (req, res, next) => {
     // TODO: Once passport is used, access req.user.id for validation
     // if (req.params.id !== req.user.id) {
     //     const message = chalk.red(`You cannot delete other users.`);
@@ -276,7 +285,7 @@ router.delete('/users/:id', (req, res, next) => {
     });
 });
 
-router.delete('/shoots/:id', (req, res, next) => {
+router.delete('/shoots/:id', jwtAuth, (req, res, next) => {
     // TODO: Once passport is used, access req.user.id to ensure user is owner of the shoot for validation
     // Shoot.findById(req.params.id).select('owner').then(shoot => {
     //     if (shoot.owner !== req.user.id) {
