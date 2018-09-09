@@ -1,3 +1,5 @@
+
+require('dotenv').config();
 const mongoose = require('mongoose');
     mongoose.Promise = global.Promise;
 const express = require('express');
@@ -7,11 +9,13 @@ const cors = require('cors');
 
 const { PORT, CLIENT_ORIGIN, DATABASE_URL } = require('./config');
 const { router: apiRouter } = require('./routes/apiRouter');
+const { router: authRouter } = require('./routes/authRouter');
 
 const app = express();
 app.use(morgan('common'));
 app.use(cors({origin: CLIENT_ORIGIN}));
 app.use('/api', apiRouter)
+app.use('/auth', authRouter);
 
 let server;
 
