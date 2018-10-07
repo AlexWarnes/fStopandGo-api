@@ -1,11 +1,15 @@
+'use strict';
+
+require('dotenv').config();
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
 	mongoose.Promise = global.Promise;
 const faker = require('faker');
 const chalk = require('chalk');
+const jwt = require('jsonwebtoken');
 
-const { TESTING_DATABASE_URL } = require('../config');
+const { TESTING_DATABASE_URL, JWT_SECRET } = require('../config');
 const { app, runServer, closeServer } = require('../server');
 const { User } = require('../models/User');
 const { Shoot } = require('../models/Shoot');
@@ -52,14 +56,20 @@ function generateShoot(username) {
 function seedShootData() {
 	console.info(chalk.dim('Seeding Shoot Data...'));
 	let seedData = [];
-	for(i = 0; i <= 10; i++){
+	for(let i = 0; i <= 10; i++){
 		seedData.push(generateShoot(`user${i}`));
 	}
 	return Shoot.insertMany(seedData);
 };
 
-//TODO: Add this to incorporate JWT testing
-// function getToken(username){}
+function getToken(username){
+	const token = jwt.sign(
+		{user:{username}}, 
+		JWT_SECRET, 
+		{algorithm: 'HS256', subject: username, expiresIn: '7d'}
+	);
+	return token;
+}
 
 function tearDownDatabase(){
 	console.warn(chalk.dim('Tearing down test db...'));
@@ -68,12 +78,21 @@ function tearDownDatabase(){
 
 // CRUD Testing for Users
 describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
+	const username = 'testUser';
+	const password = 'testUserPW';
+	const token = getToken(username);
+
 	before(function(){
 		return runServer(TESTING_DATABASE_URL);
 	});
 
 	beforeEach(function(){
-		return seedUserData();
+		return seedUserData()
+		.then(User.hashPassword(password))
+		.then(password => User.create({
+			username,
+			password
+		}));
 	});
 
 	afterEach(function(){
@@ -90,6 +109,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 			let res;
 			return chai.request(app)
 			.get('/api/users')
+			.set('authorization', `Bearer ${token}`)
 			.then(function(_res){
 				res = _res;
 				expect(res).to.have.status(200);
@@ -111,6 +131,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 				randomUser = _user;
 				return chai.request(app)
 				.get(`/api/users/${randomUser.id}`)
+				.set('authorization', `Bearer ${token}`)
 			}).then(function(res){
 				expect(res).to.have.status(200);
 				expect(res).to.be.json;
@@ -156,6 +177,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 				updatePayload.id = user.id;
 				return chai.request(app)
 				.put(`/api/users/${updatePayload.id}`)
+				.set('authorization', `Bearer ${token}`)
 				.send(updatePayload)
 			}).then(function(res){
 				expect(res).to.have.status(204);
@@ -174,7 +196,8 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 			return User.findOne({}).then(function(user){
 				userToDelete = user;
 				return chai.request(app)
-				.delete(`/api/users/${userToDelete.id}`);
+				.delete(`/api/users/${userToDelete.id}`)
+				.set('authorization', `Bearer ${token}`);
 			}).then(function(res){
 				expect(res).to.have.status(200);
 				return User.findById(userToDelete.id);
@@ -186,12 +209,21 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 });
 
 describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
+	const username = 'user2';
+	const password = 'testUserPW';
+	const token = getToken(username);
+	
 	before(function(){
 		return runServer(TESTING_DATABASE_URL);
 	});
 
 	beforeEach(function(){
-		return seedShootData();
+		return seedShootData()
+		.then(User.hashPassword(password))
+		.then(password => User.create({
+			username,
+			password
+		}));
 	});
 
 	afterEach(function(){
@@ -208,6 +240,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 			let res;
 			return chai.request(app)
 			.get('/api/shoots')
+			.set('authorization', `Bearer ${token}`)
 			.then(function(_res){
 				res = _res;
 				expect(res).to.have.status(200);
@@ -228,6 +261,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 				randomShoot = shoot;
 				return chai.request(app)
 				.get(`/api/shoots/${randomShoot.id}`)
+				.set('authorization', `Bearer ${token}`)
 			}).then(function(res){
 				expect(res).to.have.status(200);
 				expect(res).to.be.json;
@@ -247,6 +281,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 				shootsByUser2 = shoot;
 				return chai.request(app)
 				.get('/api/shoots?owner=user2')
+				.set('authorization', `Bearer ${token}`)
 			}).then(function(res){
 				expect(res).to.have.status(200);
 				expect(res).to.be.json;
@@ -265,6 +300,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 
 			return chai.request(app)
 			.post('/api/shoots')
+			.set('authorization', `Bearer ${token}`)
 			.send(newShoot)
 			.then(function(res){
 				newShoot.id = res.body.id;
@@ -298,6 +334,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 				updatePayload.id = shoot.id;
 				return chai.request(app)
 				.put(`/api/shoots/${updatePayload.id}`)
+				.set('authorization', `Bearer ${token}`)
 				.send(updatePayload)
 			}).then(function(res){
 				expect(res).to.have.status(204);
@@ -318,6 +355,7 @@ describe(chalk.bold.green('= = = CRUD Testing for Shoots = = ='), function(){
 				shootToDelete = shoot;
 				return chai.request(app)
 				.delete(`/api/shoots/${shootToDelete.id}`)
+				.set('authorization', `Bearer ${token}`)
 			}).then(function(res){
 				expect(res).to.have.status(200);
 				return Shoot.findById(shootToDelete.id)

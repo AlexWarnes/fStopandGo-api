@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const faker = require('faker');
 const chalk = require('chalk');
+const bcrypt = require('bcryptjs');
 
 const { User } = require('../models/User');
 const { Shoot } = require('../models/Shoot');
@@ -16,6 +17,11 @@ passport.use(localStrategy);
 passport.use(jwtStrategy);
 
 const jwtAuth = passport.authenticate('jwt', { session: false });
+
+// TODO: make this into middleware if possible
+function isForbidden(requestingUser, allowedUser){
+    requestingUser !== allowedUser;
+};
 
 //Temporary routes to get fake user & shoot JSON
 router.get('/fakeusers', (req, res, next) => {
@@ -61,6 +67,7 @@ router.get('/fakeshoots', (req, res, next) => {
 
 //All routes go through /api
 
+// TODO: Delete this route for production
 router.get('/users', jwtAuth, (req, res, next) => {
     User.find().then(data => {
         res.status(200)
@@ -72,7 +79,11 @@ router.get('/users', jwtAuth, (req, res, next) => {
 });
 
 router.get('/users/:id', jwtAuth, (req, res, next) => {
-    // TODO: restrict by requring req.user.id === req.params.id
+    // validateAppropriateUser(req.user.id, req.params.id, res);
+    if (req.user.id !== req.params.id) {
+        return res.status(403).json({message: 'You are forbidden from executing this action.'})
+    }
+
     User.findById(req.params.id).then(user => {
         res.status(200)
         .json(user.serialize());
@@ -85,7 +96,12 @@ router.get('/users/:id', jwtAuth, (req, res, next) => {
 router.get('/shoots', jwtAuth, (req, res, next) => {
     // TODO: use this once passport is incorporated:
     // if (req.query.owner && req.query.owner === req.user.id) {
+    
     if (req.query.owner) {
+        // validateAppropriateUser(req.user.id, req.query.owner, res);
+        if (req.user.id !== req.query.owner) {
+            return res.status(403).json({message: 'You are forbidden from executing this action.'})
+        }
         console.log(chalk.cyan(`QUERY: ${req.query.owner}`));
         Shoot.find({owner: req.query.owner}).then(data => {
             res.status(200)
@@ -95,18 +111,17 @@ router.get('/shoots', jwtAuth, (req, res, next) => {
             res.status(500).json({message: 'Internal server error'});
         });
     } else {
-        Shoot.find().then(data => {
-            res.status(200)
-            .json(data.map(shoot => shoot.serialize()));
-        }).catch(err => {
-            console.error(err);
-            res.status(500).json({message: 'Internal server error'});
-        });
+        res.status(404)
+        .json({message: 'Sorry, you cannot view all the shoots in our database.'})
     };
 });
 
 router.get('/shoots/:id', jwtAuth, (req, res, next) => {
     Shoot.findById(req.params.id).then(shoot => {
+        // validateAppropriateUser(req.user.id, shoot.owner, res);
+        if (req.user.id !== shoot.owner) {
+            return res.status(403).json({message: 'You are forbidden from executing this action.'})
+        }
         res.status(200)
         .json(shoot.serialize());
     }).catch(err => {
@@ -199,8 +214,7 @@ router.post('/users', jsonParser, (req, res, next) => {
 router.post('/shoots', jwtAuth, jsonParser, (req, res, next) => {
     Shoot.create({
         title: req.body.title,
-        // TODO: with passport use "owner: req.user.id"
-        owner: faker.name.firstName(),
+        owner: req.user.id,
         location: req.body.location,
         description: req.body.description,
         gearList: req.body.gearList
@@ -214,7 +228,10 @@ router.post('/shoots', jwtAuth, jsonParser, (req, res, next) => {
 });
 
 router.put('/users/:id', jwtAuth, jsonParser, (req, res, next) => {
-    // TODO: restrict by requring req.user.id === req.params.id
+    // validateAppropriateUser(req.user.id, req.params.id, res);
+    if (req.user.id !== req.params.id) {
+        return res.status(403).json({message: 'You are forbidden from executing this action.'})
+    }
     if (req.params.id !== req.body.id) {
         const message = chalk.red(`Request path id (${req.params.id}) and request body id (${req.body.id}) must match.`);
         console.error(message);
@@ -231,9 +248,12 @@ router.put('/users/:id', jwtAuth, jsonParser, (req, res, next) => {
         }
     });
 
+    if ('password' in updatePayload) {
+        updatePayload.password = bcrypt.hashSync(updatePayload.password, 10);
+    }
+
     User.findByIdAndUpdate(req.body.id, {$set: updatePayload})
     .then(user => {
-        //TODO: Figure out callback to return the updated user
         res.status(204).end();
     }).catch(err => {
         console.error(err);
@@ -244,6 +264,7 @@ router.put('/users/:id', jwtAuth, jsonParser, (req, res, next) => {
 router.put('/shoots/:id', jwtAuth, jsonParser, (req, res, next) => {
     // TODO: restrict by requring req.user.id === req.params.id
     //TODO this exact same validation is repeated four times, so make it into a validation function
+    // validateAppropriateUser(req.user.id, req.params.id, res);
     if (req.params.id !== req.body.id) {
         const message = chalk.red(`Request path id (${req.params.id}) and request body id (${req.body.id}) must match.`);
         console.error(message);
@@ -259,23 +280,21 @@ router.put('/shoots/:id', jwtAuth, jsonParser, (req, res, next) => {
         }
     });
 
-    Shoot.findByIdAndUpdate(req.body.id, {$set: updatePayload}).then(shoot => {
-        //TODO: Figure out callback to return the updated user
-        res.status(204).end();
+    Shoot.findOneAndUpdate({_id: req.body.id, owner: req.user.id}, {$set: updatePayload})
+    .then(shoot => {
+        shoot === null
+        ? res.status(403).json({message: 'You cannot edit this shoot'})
+        : res.status(204).end();
     }).catch(err => {
         console.error(err)
-        .json({message: 'Internal server error'});
+        res.status(500).json({message: 'Internal server error'});
     });
 });
 
 router.delete('/users/:id', jwtAuth, (req, res, next) => {
-    // TODO: Once passport is used, access req.user.id for validation
-    // if (req.params.id !== req.user.id) {
-    //     const message = chalk.red(`You cannot delete other users.`);
-    //     console.error(message);
-    //     return res.status(403)
-    //     .json({error: message});
-    // };
+    if (req.user.id !== req.params.id) {
+        return res.status(403).json({message: 'You are forbidden from executing this action.'})
+    }
 
     User.findByIdAndDelete(req.params.id)
         .then(res.status(200).end())
