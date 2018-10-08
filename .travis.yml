@@ -9,4 +9,6 @@ deploy:
   app: fstopandgo-api
   on:
     repo: AlexWarnes/fStopandGo-api
-    
+env:
+  global:
+    secure: BAK2j+F5LLJXq+BIrS3l1YEOfUl5jZD0nOpKYFXlLBI1VFw9EORm/E6WAVWQYYv7ZR+0iyXyy7n8Bq5oHlfVZVsImBw3k8ui/jG6TrENNnNRdHdFp/HxNAWdKpQ/cW0xoehbvZlHeXEyL6dfleamLNhepKS5hWlJCwtyXXVGJuZZDf6uMRBMHJlTuah0WnPu3PuZsu2Dow12VmCEnNnRF6K3Lt0jUHKVuwoyaNunrolHhcqJoc8PbBduo+r/go2S6K9Fi8lsaBt53X0UlZ5P8Bq0xeyzvulERlDZzA6rBB/1Cm2nqhGsC7LkS/S1ei7TCQLw4tV0Egllmqc9nbcSrdXMBbvDCxAaY2Sg7j3ps1J5CUXB8j4cR8QLuZzAjbMYjbdrIqtVh8Bs85A9wvdr+/0qs35Z+pyJV66OjuC6IqTIZ4hVNIdMq2BIacGv+etPjmapDa/7px8/biax/NKINxbAy1nlek6nObWW+zDH18Z/AjlQ1U2p2l5gGd/18Cb7V0zBjQP2C4wvtXjQMBYgFQ5nbpxXytbqeckoxi2QHWPbFIz3gR1BfXtWTxGny3vYTuLgZY5ju424U1+5PGBc7z0dzCxs3W8mCrEzwOtGemX1uX2qXryzqSH7uvtiHrTXR5xH/WJWmpniUzcoOs7QSWDzMuknh6WFQ+ddTAjfbZ4=
