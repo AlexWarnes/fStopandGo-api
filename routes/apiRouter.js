@@ -19,9 +19,9 @@ passport.use(jwtStrategy);
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
 // TODO: make this into middleware if possible
-function isForbidden(requestingUser, allowedUser){
-    requestingUser !== allowedUser;
-};
+// function isForbidden(requestingUser, allowedUser){
+//     requestingUser !== allowedUser;
+// };
 
 //Temporary routes to get fake user & shoot JSON
 router.get('/fakeusers', (req, res, next) => {
@@ -67,7 +67,7 @@ router.get('/fakeshoots', (req, res, next) => {
 
 //All routes go through /api
 
-// TODO: Delete this route for production
+// TODO: Delete this route for final production
 router.get('/users', jwtAuth, (req, res, next) => {
     User.find().then(data => {
         res.status(200)
@@ -79,7 +79,8 @@ router.get('/users', jwtAuth, (req, res, next) => {
 });
 
 router.get('/users/:id', jwtAuth, (req, res, next) => {
-    // validateAppropriateUser(req.user.id, req.params.id, res);
+    console.log(chalk.cyan('**** ' + req.user.id + ' ****'));
+
     if (req.user.id !== req.params.id) {
         return res.status(403).json({message: 'You are forbidden from executing this action.'})
     }
@@ -98,7 +99,6 @@ router.get('/shoots', jwtAuth, (req, res, next) => {
     // if (req.query.owner && req.query.owner === req.user.id) {
     
     if (req.query.owner) {
-        // validateAppropriateUser(req.user.id, req.query.owner, res);
         if (req.user.id !== req.query.owner) {
             return res.status(403).json({message: 'You are forbidden from executing this action.'})
         }
