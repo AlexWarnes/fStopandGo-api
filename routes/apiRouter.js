@@ -192,23 +192,36 @@ router.post('/users', jsonParser, (req, res, next) => {
         });
     }
 
-    User.hashPassword(req.body.password).then(hash => {
-        User.create({
-            username: req.body.username,
-            password: hash,
-            email: req.body.email
+    let {username, password } = req.body;
+  
+    return User.find({username})
+        .count()
+        .then(count => {
+            if (count > 0) {
+                // There is an existing user with the same username
+                return Promise.reject({
+                    code: 422,
+                    reason: 'ValidationError',
+                    message: 'Username already taken',
+                    location: 'username'
+                });
+            }
+            // If there is no existing user, hash the password
+            return User.hashPassword(password);
+        }) .then(hash => {
+            return User.create({
+                username: req.body.username,
+                password: hash,
+                email: req.body.email
+            });
         }).then(user => {
-            res.status(201)
-            .json(user.serialize());
+            return res.status(201).json(user.serialize());
         }).catch(err => {
-            console.error(err);
-            res.status(500).json({message: 'Internal server error'});
-        });
-    }).catch(err => {
-        console.error(err);
-        res.status(500).json({message: 'Internal server error'});
-    })
-    
+        if (err.reason === 'ValidationError') {
+            return res.status(err.code).json(err);
+        }
+        res.status(500).json({code: 500, message: 'Internal server error'});
+    });
 });
 
 router.post('/shoots', jwtAuth, jsonParser, (req, res, next) => {
