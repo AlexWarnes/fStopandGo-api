@@ -105,25 +105,6 @@ describe(chalk.bold.green('= = = CRUD Testing for Users = = ='), function() {
 		return closeServer();
 	});
 
-	describe(chalk.green('GET Users from /api/users'), function(){
-		it('Should return all the users', function(){
-			let res;
-			return chai.request(app)
-			.get('/api/users')
-			.set('authorization', `Bearer ${token}`)
-			.then(function(_res){
-				res = _res;
-				expect(res).to.have.status(200);
-				expect(res).to.be.json;
-				expect(res.noContent).to.be.false;
-				return User.countDocuments();
-			})
-			.then(function(count){
-				expect(res.body).to.have.lengthOf(count);
-			});
-		});
-	});
-
 	//TODO: How to create req object? (superagent?); Requires validation with req.user.id
 	describe.skip(chalk.green('GET Specific User from /api/users/:id'), function() {
 		it('Should return the specified user', function(){
