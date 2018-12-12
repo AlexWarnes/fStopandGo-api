@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
-const faker = require('faker');
 const chalk = require('chalk');
 const bcrypt = require('bcryptjs');
 
@@ -23,60 +22,15 @@ const jwtAuth = passport.authenticate('jwt', { session: false });
 //     requestingUser !== allowedUser;
 // };
 
-//Temporary routes to get fake user & shoot JSON
-router.get('/fakeusers', (req, res, next) => {
-    const fakeUsers = () => {
-        let users = []
-        
-        for(let i = 0; i<4; i++) {
-            users.push({
-                username: faker.internet.userName(),
-                password: faker.internet.password(),
-                email: faker.internet.email()
-            });
-        }
-        return users;
-    }
-    res.json(fakeUsers());
-});
-router.get('/fakeshoots', (req, res, next) => {
-    const fakeGearList = () => {
-        let fakeGear = [];
-    
-        for(let i = 0; i<4; i++){
-            fakeGear.push(faker.random.word());
-        }
-        return fakeGear;
-    };
-    const fakePhotoshoots = () => {
-        let fakeShoots = []
-        
-        for(let i = 0; i<4; i++) {
-            fakeShoots.push({
-                title: faker.hacker.phrase(),
-                location: faker.address.city(),
-                description: faker.lorem.paragraph(),
-                owner: `user${i}`,
-                gearList: fakeGearList()
-            });
-        }
-        return fakeShoots;
-    }
-    res.json(fakePhotoshoots());
+
+//Heroku server will lag if asleep. The client will
+//fetch from this endpoint onLoad to start waking up
+//the server before the user tries to login/signup
+router.get('/awake', (req, res) => {
+    res.status(200).json({status: 'awake'});
 });
 
 //All routes go through /api
-
-// TODO: Delete this route for final production
-router.get('/users', jwtAuth, (req, res, next) => {
-    User.find().then(data => {
-        res.status(200)
-        .json(data.map(user => user.serialize()));
-    }).catch(err => {
-        console.error(chalk.red(err));
-        res.status(500).json({message: 'Internal server error'});
-    }); 
-});
 
 router.get('/users/:id', jwtAuth, (req, res, next) => {
     console.log(chalk.cyan('**** ' + req.user.id + ' ****'));
