@@ -26,8 +26,8 @@ const jwtAuth = passport.authenticate('jwt', { session: false });
 //Heroku server will lag if asleep. The client will
 //fetch from this endpoint onLoad to start waking up
 //the server before the user tries to login/signup
-router.get('/awake', (req, res) => {
-    res.status(200).json({status: 'awake'});
+router.get('/status', (req, res) => {
+    res.status(200).end();
 });
 
 //All routes go through /api
