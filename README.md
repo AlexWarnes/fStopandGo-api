@@ -33,7 +33,7 @@ The **_f/StopandGo_** API uses JSON Web Token (JWT) protected endpoints for CRUD
 `/api/shoots` 
 * POST (JWT protected)
 
-**Read All Photoshoots by Specified Owner**\n
+**Read All Photoshoots by Specified Owner**
 `/api/shoots?owner=[userID]` 
 * GET (JWT protected)
 * _Requires `Owner` Query Param_
